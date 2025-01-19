@@ -1,0 +1,41 @@
+from cryptography.fernet import Fernet
+from transformers import pipeline
+import json
+
+# Securely generate and store a key (In practice, store this key in environment variables)
+def generate_key():
+    return Fernet.generate_key()
+
+key = generate_key()  # This should be securely stored in an environment variable or key vault
+cipher_suite = Fernet(key)
+
+# Encrypt and decrypt functions
+def encrypt_message(message):
+    """Encrypt the message to protect sensitive content."""
+    return cipher_suite.encrypt(message.encode())
+
+def decrypt_message(encrypted_message):
+    """Decrypt the message."""
+    return cipher_suite.decrypt(encrypted_message).decode()
+
+# Load a pre-trained NLP model for toxicity detection
+toxicity_detector = pipeline("text-classification", model="unitary/toxic-bert", return_all_scores=True)
+
+def is_message_toxic(message):
+    """
+    Check if a message is toxic. It will first decrypt the message, then check for toxicity.
+    """
+    decrypted_message = decrypt_message(message)
+    scores = toxicity_detector(decrypted_message)
+    toxic_score = next(filter(lambda x: x['label'] == 'LABEL_1', scores[0]))['score']
+    return toxic_score > 0.7  # Threshold for toxicity
+
+# Example usage
+chat_message = "You're terrible at this game!"
+encrypted_message = encrypt_message(chat_message)
+
+if is_message_toxic(encrypted_message):
+    print("[Message Blocked] - Toxicity detected")
+else:
+    print("Message: Safe")
+
