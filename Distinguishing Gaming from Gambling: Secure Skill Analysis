@@ -1,0 +1,44 @@
+import random
+import hashlib
+import hmac
+import time
+
+# Secret key for HMAC (used for message authentication)
+SECRET_KEY = b"supersecretkey"  # Store securely in env vars or key vault
+
+def secure_hash(message):
+    """
+    Hash the message using HMAC to ensure data integrity and non-repudiation.
+    """
+    return hmac.new(SECRET_KEY, message.encode(), hashlib.sha256).hexdigest()
+
+def skill_game_simulation(skill_level, randomness_factor=0.3):
+    """
+    Simulates a skill-based game with secure hashing to ensure outcome integrity.
+    """
+    skill_contribution = skill_level * (1 - randomness_factor)
+    random_contribution = random.uniform(0, 1) * randomness_factor
+    outcome = skill_contribution + random_contribution
+    
+    # Secure the result
+    result_hash = secure_hash(str(outcome))
+    return outcome > 0.5, result_hash
+
+def run_simulation(skill_level, trials=1000):
+    """
+    Runs multiple simulations and securely logs the results.
+    """
+    wins = 0
+    for _ in range(trials):
+        win, result_hash = skill_game_simulation(skill_level)
+        if win:
+            wins += 1
+        # Securely log the result hash for future audits
+        print(f"Game outcome hash: {result_hash}")  # Would be logged securely
+    win_rate = wins / trials
+    return win_rate
+
+# Example
+skill = 0.7
+win_rate = run_simulation(skill)
+print(f"Win rate for skill {skill * 100}%: {win_rate * 100:.2f}%")
